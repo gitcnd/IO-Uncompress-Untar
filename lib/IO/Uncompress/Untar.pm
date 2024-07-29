@@ -79,9 +79,13 @@ sub read {
   ++$this->{rec}; # debugging - block accidental recursion
 #warn "$this $bytes r=" . $this->{rec};
   my $offset = $_[2];
+  my $at_end = 0;
   die "non zero offset not implimented" if($offset);
   my $maxleft=$this->{header}->{size}-$this->{i};
-  $bytes=$maxleft if($bytes>$maxleft);
+  if($bytes>$maxleft) {
+    $bytes=$maxleft;
+    $at_end = 1;
+  }
   if((!defined $this->{raw})||($bytes>length($this->{raw}))) {
     my $blks=int(($bytes-length( $this->{raw} )-1 )/512)+1;
     $this->{raw}.=$this->{ts}->ReadBlocks($blks) if($this->{rec}<2);
@@ -90,7 +94,11 @@ warn "Blocked recursion $this->{rec}" if($this->{rec}>1);
   }
   --$this->{rec};
   $_[0]=substr($this->{raw},$this->{readoffset},$bytes);
-  $this->{raw}=substr($this->{raw},$bytes);
+  if($at_end) {
+    $this->{raw}='';
+  } else {
+    $this->{raw}=substr($this->{raw},$bytes);
+  }
   #$this->{readoffset}+=$bytes;
 #warn "$this got=" . length($_[0]);
   return length($_[0]);
